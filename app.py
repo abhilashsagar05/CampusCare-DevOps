@@ -76,6 +76,10 @@ def create_app(test_config=None):
 
     app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
     if test_config:
@@ -97,6 +101,7 @@ def create_app(test_config=None):
         seed_user("admin", os.getenv("CAMPUSCARE_ADMIN_PASSWORD", "AdminDemo123!"), "Campus Administrator", "admin", User)
         seed_user("tech1", os.getenv("CAMPUSCARE_TECH_PASSWORD", "TechDemo123!"), "Ravi Kumar · Technician", "technician", User)
         seed_user("tech2", os.getenv("CAMPUSCARE_TECH2_PASSWORD", "TechDemo456!"), "Priya Sharma · Technician", "technician", User)
+        db.engine.dispose()
 
     def current_user():
         user_id = session.get("user_id")
