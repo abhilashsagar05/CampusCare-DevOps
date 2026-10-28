@@ -10,4 +10,4 @@ COPY static ./static
 RUN chown -R appuser:appgroup /app
 USER appuser
 EXPOSE 5000
-CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:5000", "--access-logfile", "-", "app:app"]
+CMD ["sh", "-c", "exec gunicorn --workers 2 --bind 0.0.0.0:${PORT:-5000} --access-logfile - app:app"]

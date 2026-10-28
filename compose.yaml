@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
 
   app:
+    image: campuscare:latest
     build: .
     environment:
       DATABASE_URL: postgresql+psycopg://campuscare:${POSTGRES_PASSWORD:-campuscare-local-only}@db:5432/campuscare

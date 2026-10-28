@@ -61,8 +61,20 @@ class Issue(db.Model):
 def create_app(test_config=None):
     app = Flask(__name__)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-only-change-me")
-    default_db = "sqlite:///" + os.path.join(os.path.dirname(__file__), "campus_issues.db")
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", default_db)
+
+    default_db = "sqlite:///" + os.path.join(
+        os.path.dirname(__file__), "campus_issues.db"
+    )
+
+    db_url = os.getenv("DATABASE_URL", default_db)
+    # Render and other cloud providers often provide postgres:// or postgresql:// URLs.
+    # Since this project uses psycopg3 (psycopg[binary]), SQLAlchemy requires postgresql+psycopg://
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql+psycopg://", 1)
+    elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+psycopg://"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SESSION_COOKIE_HTTPONLY"] = True
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -270,5 +282,10 @@ def seed_user(username, password, display_name, role, user_model):
 
 
 app = create_app()
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=False)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
+        debug=False
+    )

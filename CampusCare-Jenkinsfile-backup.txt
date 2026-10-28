@@ -1,0 +1,84 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+        stage('Checkout from GitHub') {
+            steps {
+                deleteDir()
+
+                git branch: 'main',
+                    url: 'https://github.com/abhilashsagar05/CampusCare-DevOps.git'
+
+                echo 'Successfully downloaded CampusCare from GitHub!'
+            }
+        }
+
+        stage('Verify Source Code') {
+            steps {
+                sh '''
+                    set -e
+                    echo "Checking required files..."
+
+                    test -f app.py
+                    test -f requirements.txt
+                    test -f Dockerfile
+                    test -f tests/test_app.py
+                    test -f compose.yaml
+
+                    echo "All required files are present."
+                '''
+            }
+        }
+
+        stage('Run Python Tests') {
+            steps {
+                sh '''
+                    set -e
+                    echo "Starting Python tests..."
+
+                    docker run --rm \
+                      --mount "type=volume,src=jenkins_home,dst=/app,volume-subpath=workspace/CampusCare-CI-CD,readonly" \
+                      -w /app \
+                      -e DATABASE_URL=sqlite:////tmp/campuscare-ci.db \
+                      python:3.12-slim \
+                      sh -c "pip install --no-cache-dir -r requirements.txt && python -m pytest -p no:cacheprovider -v"
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "Building CampusCare Docker image..."
+
+                    docker build -t campuscare:latest .
+
+                    echo "Docker image built successfully!"
+
+                    docker images campuscare:latest
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'SUCCESS: CampusCare CI pipeline completed!'
+            echo 'Python tests passed and Docker image was built.'
+        }
+
+        failure {
+            echo 'FAILURE: CampusCare pipeline failed. Check Console Output.'
+        }
+
+        always {
+            echo 'CampusCare pipeline execution finished.'
+        }
+    }
+}
