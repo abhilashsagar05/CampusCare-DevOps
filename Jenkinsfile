@@ -81,17 +81,18 @@ pipeline {
                     echo "CD: Deploying new campuscare:latest image..."
                     echo "============================================"
 
-                    # Get the DB container IP so the app can reach it
-                    DB_IP=$(docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ${DB_CONTAINER})
-                    echo "DB container IP: $DB_IP"
+                    # Read env vars directly from the existing app container
+                    # Use single quotes on --format so shell does NOT expand $k/$v
+                    DATABASE_URL=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ${APP_CONTAINER} | grep '^DATABASE_URL=' | cut -d= -f2-)
+                    SECRET_KEY=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ${APP_CONTAINER} | grep '^SECRET_KEY=' | cut -d= -f2-)
+                    ADMIN_PASS=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ${APP_CONTAINER} | grep '^CAMPUSCARE_ADMIN_PASSWORD=' | cut -d= -f2-)
+                    TECH_PASS=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ${APP_CONTAINER} | grep '^CAMPUSCARE_TECH_PASSWORD=' | grep -v TECH2 | cut -d= -f2-)
+                    TECH2_PASS=$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' ${APP_CONTAINER} | grep '^CAMPUSCARE_TECH2_PASSWORD=' | cut -d= -f2-)
 
-                    # Capture current app container env vars (passwords, secret key)
-                    POSTGRES_PASSWORD=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" ${APP_CONTAINER} | grep POSTGRES_PASSWORD | cut -d= -f2)
-                    SECRET_KEY=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" ${APP_CONTAINER} | grep SECRET_KEY | cut -d= -f2)
-                    ADMIN_PASS=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" ${APP_CONTAINER} | grep CAMPUSCARE_ADMIN_PASSWORD | cut -d= -f2)
-                    TECH_PASS=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" ${APP_CONTAINER} | grep CAMPUSCARE_TECH_PASSWORD | grep -v TECH2 | cut -d= -f2)
-                    TECH2_PASS=$(docker inspect --format "{{range .Config.Env}}{{println .}}{{end}}" ${APP_CONTAINER} | grep CAMPUSCARE_TECH2_PASSWORD | cut -d= -f2)
-                    NETWORK=$(docker inspect --format "{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}" ${APP_CONTAINER})
+                    # Use single quotes on --format so shell does NOT expand $k/$v
+                    NETWORK=$(docker inspect --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}' ${APP_CONTAINER})
+
+                    echo "DATABASE_URL: $DATABASE_URL"
                     echo "Docker network: $NETWORK"
 
                     # Stop and remove the old app container
@@ -105,7 +106,7 @@ pipeline {
                       --name ${APP_CONTAINER} \
                       --network ${NETWORK} \
                       -p ${APP_PORT}:5000 \
-                      -e DATABASE_URL="postgresql+psycopg://campuscare:${POSTGRES_PASSWORD}@db:5432/campuscare" \
+                      -e DATABASE_URL="${DATABASE_URL}" \
                       -e SECRET_KEY="${SECRET_KEY}" \
                       -e CAMPUSCARE_ADMIN_PASSWORD="${ADMIN_PASS}" \
                       -e CAMPUSCARE_TECH_PASSWORD="${TECH_PASS}" \
@@ -116,8 +117,8 @@ pipeline {
                     echo "Waiting for app to become healthy..."
                     sleep 8
 
-                    # Health check
-                    STATUS=$(docker inspect --format "{{.State.Status}}" ${APP_CONTAINER})
+                    # Confirm container is running
+                    STATUS=$(docker inspect --format '{{.State.Status}}' ${APP_CONTAINER})
                     echo "Container status: $STATUS"
                     if [ "$STATUS" != "running" ]; then
                         echo "ERROR: Container failed to start!"
