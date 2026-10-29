@@ -165,6 +165,26 @@ pipeline {
             }
         }
 
+        // ── Stage 7: Trigger Render Cloud Deployment ─────────────────
+        stage('Deploy to Render Cloud') {
+            steps {
+                sh '''
+                    set -e
+                    echo "============================================================"
+                    echo "All automated tests & local checks passed!"
+                    echo "Authorizing cloud deployment: Triggering Render Deploy Hook..."
+                    echo "============================================================"
+
+                    # Trigger Render Deploy Hook via POST request
+                    curl -s -X POST "https://api.render.com/deploy/srv-dbgo7l1srm7s73ectc80?key=Be-iuquYaNo"
+
+                    echo ""
+                    echo "Render Cloud deployment triggered successfully!"
+                    echo "============================================================"
+                '''
+            }
+        }
+
     }
 
     post {
