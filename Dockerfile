@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app.py .
 COPY templates ./templates
 COPY static ./static
+COPY tests ./tests
 RUN chown -R appuser:appgroup /app
 USER appuser
 EXPOSE 5000
