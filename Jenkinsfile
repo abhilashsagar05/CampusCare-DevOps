@@ -7,6 +7,11 @@ pipeline {
         skipDefaultCheckout(true)
     }
 
+    triggers {
+        // Automatically check GitHub every minute for new commits
+        pollSCM('* * * * *')
+    }
+
     environment {
         APP_CONTAINER   = 'campuscare_devops_project-app-1'
         DB_CONTAINER    = 'campuscare_devops_project-db-1'
