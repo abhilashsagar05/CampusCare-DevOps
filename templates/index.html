@@ -1,45 +1,181 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CampusCare | Issue Reporting</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-<header class="topbar"><div class="brand-mark">CC</div><div><p class="eyebrow">SMART CAMPUS</p><h1>CampusCare</h1></div><span class="topbar-note">Report it. Track it. Resolve it.</span><a class="top-link" href="{{ url_for('login') }}">Staff sign in →</a></header>
-<main class="container">
-  <section class="intro"><div><p class="eyebrow">CAMPUS SERVICE DESK</p><h2>A better campus starts with<br><span>one useful report.</span></h2><p class="intro-copy">Report maintenance and facility issues. The campus administrator routes each report to a technician who updates its progress.</p></div><div class="intro-icon" aria-hidden="true">✦</div></section>
-  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="messages">{% for category, message in messages %}<p class="flash {{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}{% endwith %}
-  <section class="stats">
-    <article class="stat-card"><span>Total reports</span><strong>{{ counts.total }}</strong><small>All submitted issues</small></article>
-    <article class="stat-card"><span>Pending</span><strong>{{ counts.pending }}</strong><small>Waiting for action</small></article>
-    <article class="stat-card"><span>In progress</span><strong>{{ counts.in_progress }}</strong><small>Being worked on</small></article>
-    <article class="stat-card"><span>Resolved</span><strong>{{ counts.resolved }}</strong><small>Completed issues</small></article>
-  </section>
-  <div class="content-grid">
-    <section class="panel form-panel">
-      <div class="section-heading"><div><p class="eyebrow">NEW TICKET</p><h3>Report an issue</h3></div><span class="heading-icon">＋</span></div>
-      <form method="post" action="{{ url_for('create_issue') }}">
-        <label for="title">Issue title <em>*</em></label><input id="title" name="title" maxlength="120" placeholder="e.g. Projector not working" required>
-        <label for="description">Description <em>*</em></label><textarea id="description" name="description" rows="3" placeholder="Describe what happened and any details that may help." required></textarea>
-        <div class="two-col"><div><label for="location">Location <em>*</em></label><input id="location" name="location" maxlength="120" placeholder="e.g. Block B, Room 204" required></div>
-        <div><label for="category">Category <em>*</em></label><select id="category" name="category" required><option value="">Choose category</option><option>Electrical</option><option>Water / Plumbing</option><option>Internet / Wi-Fi</option><option>Classroom Equipment</option><option>Cleanliness</option><option>Safety</option><option>Other</option></select></div></div>
-        <div class="two-col"><div><label for="priority">Priority</label><select id="priority" name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
-        <div><label for="reporter">Your name</label><input id="reporter" name="reporter" maxlength="80" placeholder="e.g. Student"></div></div>
-        <button class="primary-button" type="submit">Submit report <span>→</span></button><p class="form-footnote">Fields marked * are required.</p>
-      </form>
-    </section>
-    <section class="panel reports-panel">
-      <div class="section-heading reports-heading"><div><p class="eyebrow">ISSUE TRACKER</p><h3>Recent reports</h3></div>
-        <form method="get" action="{{ url_for('index') }}" class="filter-form"><label class="sr-only" for="status">Filter by status</label><select id="status" name="status" onchange="this.form.submit()"><option value="">All statuses</option>{% for status in ['Pending', 'In Progress', 'Resolved'] %}<option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></form>
+  <header class="topbar">
+    <div class="brand-mark">CC</div>
+    <div>
+      <p class="eyebrow">SMART CAMPUS</p>
+      <h1>CampusCare</h1>
+    </div>
+    <span class="topbar-note">Report it. Track it. Resolve it.</span>
+    <a class="top-link" href="{{ url_for('login') }}">Staff sign in →</a>
+  </header>
+
+  <main class="container">
+    <section class="intro">
+      <div>
+        <p class="eyebrow">CAMPUS SERVICE DESK</p>
+        <h2>A better campus starts with<br><span>one useful report.</span></h2>
+        <p class="intro-copy">Report maintenance and facility issues. The campus administrator routes each report to a technician who updates its progress.</p>
       </div>
-      {% if issues %}<div class="issue-list">{% for issue in issues %}<article class="issue-card">
-        <div class="issue-topline"><span class="issue-id">#{{ issue.id }} · {{ issue.category }}</span><span class="priority priority-{{ issue.priority|lower }}">{{ issue.priority }}</span></div>
-        <h4>{{ issue.title }}</h4><p class="issue-description">{{ issue.description }}</p>
-        <div class="issue-meta"><span>⌖ {{ issue.location }}</span><span>By {{ issue.reporter }}</span></div>
-        <div class="issue-bottom"><span class="status status-{{ issue.status|lower|replace(' ', '-') }}">{{ issue.status }}</span><span class="assigned-public">{% if issue.technician %}Assigned to {{ issue.technician.display_name }}{% else %}Waiting for technician assignment{% endif %}</span></div></article>{% endfor %}</div>{% else %}<div class="empty-state"><span>✓</span><h4>No reports found</h4><p>Submit the first report or change the status filter.</p></div>{% endif %}
-      <p class="api-note">Developer endpoint: <code>/api/issues</code> · Health check: <code>/health</code> · Metrics: <code>/metrics</code></p>
+      <div class="intro-icon" aria-hidden="true">✦</div>
     </section>
-  </div><footer>CampusCare · Smart Campus Issue Reporting · DevOps learning project</footer>
-</main>
-</body></html>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages">
+          {% for category, message in messages %}
+            <p class="flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats">
+      <article class="stat-card">
+        <span>Total reports</span>
+        <strong>{{ counts.total }}</strong>
+        <small>All submitted issues</small>
+      </article>
+      <article class="stat-card">
+        <span>Pending</span>
+        <strong>{{ counts.pending }}</strong>
+        <small>Waiting for action</small>
+      </article>
+      <article class="stat-card">
+        <span>In progress</span>
+        <strong>{{ counts.in_progress }}</strong>
+        <small>Being worked on</small>
+      </article>
+      <article class="stat-card">
+        <span>Resolved</span>
+        <strong>{{ counts.resolved }}</strong>
+        <small>Completed issues</small>
+      </article>
+    </section>
+
+    <div class="content-grid">
+      <section class="panel form-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">NEW TICKET</p>
+            <h3>Report an issue</h3>
+          </div>
+          <span class="heading-icon">＋</span>
+        </div>
+
+        <form method="post" action="{{ url_for('create_issue') }}">
+          <label for="title">Issue title <em>*</em></label>
+          <input id="title" name="title" maxlength="120" placeholder="e.g. Projector not working" required>
+
+          <label for="description">Description <em>*</em></label>
+          <textarea id="description" name="description" rows="3" placeholder="Describe what happened and any details that may help." required></textarea>
+
+          <div class="two-col">
+            <div>
+              <label for="location">Location <em>*</em></label>
+              <input id="location" name="location" maxlength="120" placeholder="e.g. Block B, Room 204" required>
+            </div>
+            <div>
+              <label for="category">Category <em>*</em></label>
+              <select id="category" name="category" required>
+                <option value="">Choose category</option>
+                <option>Electrical</option>
+                <option>Water / Plumbing</option>
+                <option>Internet / Wi-Fi</option>
+                <option>Classroom Equipment</option>
+                <option>Cleanliness</option>
+                <option>Safety</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div>
+              <label for="priority">Priority</label>
+              <select id="priority" name="priority">
+                <option>Low</option>
+                <option selected>Medium</option>
+                <option>High</option>
+              </select>
+            </div>
+            <div>
+              <label for="reporter">Your name</label>
+              <input id="reporter" name="reporter" maxlength="80" placeholder="e.g. Student">
+            </div>
+          </div>
+
+          <button class="primary-button" type="submit">
+            Submit report <span>→</span>
+          </button>
+          <p class="form-footnote">Fields marked * are required.</p>
+        </form>
+      </section>
+
+      <section class="panel reports-panel">
+        <div class="section-heading reports-heading">
+          <div>
+            <p class="eyebrow">ISSUE TRACKER</p>
+            <h3>Recent reports</h3>
+          </div>
+          <form method="get" action="{{ url_for('index') }}" class="filter-form">
+            <label class="sr-only" for="status">Filter by status</label>
+            <select id="status" name="status" onchange="this.form.submit()">
+              <option value="">All statuses</option>
+              {% for status in ['Pending', 'In Progress', 'Resolved'] %}
+                <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+
+        {% if issues %}
+          <div class="issue-list">
+            {% for issue in issues %}
+              <article class="issue-card">
+                <div class="issue-topline">
+                  <span class="issue-id">#{{ issue.id }} · {{ issue.category }}</span>
+                  <span class="priority priority-{{ issue.priority|lower }}">{{ issue.priority }}</span>
+                </div>
+                <h4>{{ issue.title }}</h4>
+                <p class="issue-description">{{ issue.description }}</p>
+                <div class="issue-meta">
+                  <span>⌖ {{ issue.location }}</span>
+                  <span>By {{ issue.reporter }}</span>
+                </div>
+                <div class="issue-bottom">
+                  <span class="status status-{{ issue.status|lower|replace(' ', '-') }}">{{ issue.status }}</span>
+                  <span class="assigned-public">
+                    {% if issue.technician %}
+                      Assigned to {{ issue.technician.display_name }}
+                    {% else %}
+                      Waiting for technician assignment
+                    {% endif %}
+                  </span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <span>✓</span>
+            <h4>No reports found</h4>
+            <p>Submit the first report or change the status filter.</p>
+          </div>
+        {% endif %}
+
+        <p class="api-note">Developer endpoint: <code>/api/issues</code> · Health check: <code>/health</code> · Metrics: <code>/metrics</code></p>
+      </section>
+    </div>
+
+    <footer>CampusCare · Smart Campus Issue Reporting · DevOps learning project</footer>
+  </main>
+</body>
+</html>
