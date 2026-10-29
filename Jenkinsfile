@@ -110,6 +110,7 @@ pipeline {
                     docker run -d \
                       --name ${APP_CONTAINER} \
                       --network ${NETWORK} \
+                      --network-alias app \
                       -p ${APP_PORT}:5000 \
                       -e DATABASE_URL="${DATABASE_URL}" \
                       -e SECRET_KEY="${SECRET_KEY}" \
