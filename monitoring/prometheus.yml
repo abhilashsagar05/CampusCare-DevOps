@@ -6,7 +6,12 @@ scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ["prometheus:9090"]
-  - job_name: campuscare
+  - job_name: campuscare-local
     metrics_path: /metrics
     static_configs:
       - targets: ["app:5000"]
+  - job_name: campuscare-cloud
+    metrics_path: /metrics
+    scheme: https
+    static_configs:
+      - targets: ["campuscare-d52b.onrender.com"]
