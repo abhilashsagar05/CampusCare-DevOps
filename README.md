@@ -55,12 +55,31 @@ To see the issue table:
 docker compose exec db psql -U campuscare -d campuscare -c "SELECT id, title, status, assigned_technician_id FROM issues ORDER BY id DESC;"
 ```
 
-## Tests
+## Tests & Quality Assurance
 
+### 1. Automated Unit & Integration Tests (Pytest)
 Install the packages in `requirements.txt` in a Python virtual environment, then run:
 
 ```powershell
-python -m pytest -q
+python -m pytest -v
+```
+
+All 7 core test cases execute in an isolated temporary SQLite database verifying route handlers, role permissions, issue assignments, and health endpoints.
+
+### 2. Live Visual End-to-End Functional Test (Selenium)
+For project expos and live viva demonstrations, an automated visual browser test is provided that launches Google Chrome on screen, visibly fills forms, logs in as Admin and Technician, transitions ticket statuses, and confirms public resolution without touching the keyboard.
+
+Simply double-click:
+```powershell
+RUN_LIVE_TEST.bat
+```
+Or execute from terminal:
+```powershell
+# Run against local Docker Compose (http://localhost:5000):
+py tests/test_selenium.py
+
+# Or run against live Render Cloud production:
+py tests/test_selenium.py https://campuscare-d52b.onrender.com
 ```
 
 ## Monitoring endpoints
